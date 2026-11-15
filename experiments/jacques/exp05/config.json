@@ -1,0 +1,22 @@
+{
+  "env_id": "ALE/Pong-v5",
+  "member": "jacques",
+  "experiment": 5,
+  "seed": 42,
+  "total_steps": 250000,
+  "learning_starts": 10000,
+  "train_freq": 4,
+  "learning_rate": 0.0001,
+  "gamma": 0.85,
+  "batch_size": 32,
+  "buffer_size": 100000,
+  "epsilon_start": 1.0,
+  "epsilon_end": 0.01,
+  "epsilon_decay": 3e-06,
+  "target_update_freq": 1000,
+  "log_every": 10000,
+  "save_best_as_root": false,
+  "smoke_test": false,
+  "device": "mps",
+  "num_actions": 6
+}
