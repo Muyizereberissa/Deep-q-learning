@@ -96,9 +96,10 @@ uv run python play.py --model dqn_model.pth
 
 ### Demo video
 
-A short recording of the best agent playing Pong:
+A short recording of the best agent playing Pong (same clip in two places):
 
-[Watch the gameplay demo](demos/screen-capture.webm)
+- [YouTube](https://youtu.be/j0WhIRzJJIk)
+- [Local file in the repo](demos/screen-capture.webm)
 
 ## How to reproduce (brief)
 
