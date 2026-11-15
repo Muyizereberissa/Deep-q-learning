@@ -1,113 +1,109 @@
-# Deep Q-Learning (Atari Pong)
+# Deep Q-Learning on Atari Pong
 
-Group project: implement DQN from scratch with PyTorch + Gymnasium and train it on Pong.
+## Project Introduction
 
-We are **not** using Stable-Baselines3, RLlib, CleanRL, or TorchRL.
+This project implements a **Deep Q-Network (DQN)** agent from scratch using **PyTorch** and **Gymnasium**. The agent learns to play Atari Pong by interacting with the environment, storing experience in a replay buffer, and updating a convolutional Q-network with Bellman targets from a target network.
 
-## Group members
+We do **not** use Stable-Baselines3, RLlib, CleanRL, TorchRL, or any other library that provides a ready-made DQN.
 
-| Name | Folder / results file |
+Environment and dependency management use **uv**.
+
+## Group Members
+
+| Name | Role / experiment results |
 |---|---|
-| Berissa Muyizere | `experiments/berissa/`, `Berissa_Hyperparameter_experiment_results.md` |
-| Hugues Munezero | `experiments/hugues/`, `Hugues_Hyperparameter_experiment_results.md` |
-| Jacques Twizeyimana | `experiments/jacques/`, `Jacques_Hyperparameter_experiment_results.md` |
+| Berissa Muyizere | Shared training code; experiments in `experiments/berissa/`; `Berissa_Hyperparameter_experiment_results.md` |
+| Hugues Munezero | Experiments in `experiments/hugues/`; `Hugues_Hyperparameter_experiment_results.md` |
+| Jacques Twizeyimana | Experiments in `experiments/jacques/`; `Jacques_Hyperparameter_experiment_results.md` |
 
-## Environment
+Task allocation is documented in `Task_allocation_sheet.pdf`.
 
-- Game: **Pong** (`ALE/Pong-v5`)
-- Goal: move the right paddle and score points
-- Reward: usually +1 when we score, -1 when the opponent scores
+## Selected Atari Environment
 
-We picked Pong because it trains faster than most other Atari games and the reward is easy to understand.
+- **Environment:** `ALE/Pong-v5`
+- **Objective:** Control the right paddle and score points against the opponent.
+- **Reward:** Typically `+1` when the agent scores and `-1` when the opponent scores.
+- **Why Pong:** It provides a clear reward signal and is suitable for formative DQN experiments compared with harder Atari games.
 
-## Setup (uv)
+Observations are preprocessed to grayscale 84×84 frames and stacked (4 frames) so the network can see motion.
 
-```bash
-uv sync
-```
+## DQN Architecture
 
-## How to train
+The Q-network is a CNN implemented with `torch.nn` (no pretrained weights):
 
-```bash
-uv run python train.py --member berissa --experiment 1
+| Layer | Details |
+|---|---|
+| Input | Stacked frames `(4, 84, 84)` |
+| Conv1 | 32 filters, kernel 8, stride 4 + ReLU |
+| Conv2 | 64 filters, kernel 4, stride 2 + ReLU |
+| Conv3 | 64 filters, kernel 3, stride 1 + ReLU |
+| Fully connected | 512 units + ReLU |
+| Output | Q-value for each discrete action |
 
-# change hyperparameters for other experiments
-uv run python train.py --member berissa --experiment 2 \
-  --learning-rate 5e-5 --gamma 0.99 --batch-size 32 \
-  --epsilon-start 1.0 --epsilon-end 0.01 --epsilon-decay 1e-6
-```
+### Main algorithm components
 
-Each run saves:
+- **Online network:** predicts `Q(s, a)` and is trained by gradient descent  
+- **Target network:** provides stable Bellman targets; weights are copied from the online network periodically  
+- **Replay buffer:** stores `(s, a, r, s', done)` and samples random mini-batches  
+- **ε-greedy policy:** random action with probability ε, otherwise `argmax Q(s, ·)`; ε decays during training  
+- **Loss:** Smooth L1 between `Q(s, a)` and `r + γ max_{a'} Q_target(s', a')` (target is `r` when the episode ends)
 
-- model: `experiments/<member>/expXX/dqn_model.pth`
-- best model: `experiments/<member>/expXX/dqn_model_best.pth`
-- plot: `plots/<member>/expXX_training.png`
-- logs: `experiments/<member>/expXX/training_log.csv`
-
-After you find the best run, copy it for the demo:
-
-```bash
-cp experiments/<member>/expXX/dqn_model_best.pth dqn_model.pth
-```
-
-## How to play
-
-```bash
-uv run python play.py
-uv run python play.py --model experiments/berissa/exp01/dqn_model_best.pth
-```
-
-## Best trained agent (Berissa)
-
-- Best experiment: **exp01** (`lr=1e-4`, `gamma=0.99`, `batch=32`, 1M steps)
-- Best mean100 reward: **-16.83** (last-10 mean: **-15.1**)
-- Episodes / steps: **731 / 1,000,000**
-- Plot: `plots/berissa/exp01_training.png`
-- Demo weights: `dqn_model.pth` (copied from `experiments/berissa/exp01/dqn_model_best.pth`)
-- Full table: `Berissa_Hyperparameter_experiment_results.md`
-
-## DQN pieces we implemented
-
-1. **CNN Q-network** (`dqn/network.py`)  
-   Input: 4 stacked 84x84 grayscale frames  
-   Conv layers → FC 512 → Q-value for each action
-
-2. **Replay buffer** (`dqn/replay_buffer.py`)  
-   Stores transitions and samples random batches
-
-3. **Online + target networks** (`dqn/agent.py`)  
-   Online net is trained. Target net is used for the Bellman target and updated every N steps.
-
-4. **ε-greedy**  
-   With probability ε take a random action, otherwise take `argmax Q(s, a)`. ε decays during training.
-
-5. **Loss**  
-   Smooth L1 between `Q(s,a)` and `r + γ max Q_target(s', a')`
-
-Architecture diagram:
+### Network / algorithm diagram
 
 ![DQN architecture](plots/dqn_architecture.png)
 
-## Training plots
+## Explanation of the Training Process
 
-Training plots go in `plots/`. Document episode reward, episode length, and steps in your experiment results file.
+1. Reset the Pong environment and preprocess frames (grayscale, resize, frame stack).
+2. Select an action with ε-greedy using the online network.
+3. Step the environment, clip the reward to `[-1, 1]`, and store the transition in the replay buffer.
+4. Decay ε toward a minimum exploration rate.
+5. After a warm-up period, sample a mini-batch and update the online network with the Bellman loss.
+6. Periodically copy online weights into the target network.
+7. Log episode reward, episode length, and steps; save models and training plots.
 
-## Gameplay demo
+Training is run with `train.py`. Evaluation / live play uses `play.py`, which loads saved weights and acts greedily (no exploration).
 
-Record a short video of:
+### Best performing experiment (Berissa)
+
+| Item | Value |
+|---|---|
+| Experiment | 1 |
+| Hyperparameters | lr=`1e-4`, gamma=`0.99`, batch=`32`, ε: `1.0 → 0.01`, decay=`1e-6` |
+| Training steps | 1,000,000 |
+| Episodes | 731 |
+| Best mean-100 reward | -16.83 |
+| Last-10 mean reward | -15.1 |
+| Training plot | `plots/berissa/exp01_training.png` |
+| Saved model | `dqn_model.pth` (from `experiments/berissa/exp01/dqn_model_best.pth`) |
+
+Full hyperparameter tables for each member are in:
+
+- `Berissa_Hyperparameter_experiment_results.md`
+- `Hugues_Hyperparameter_experiment_results.md`
+- `Jacques_Hyperparameter_experiment_results.md`
+
+## Gameplay Demonstration
+
+The trained agent can be run live with:
 
 ```bash
+uv sync
 uv run python play.py --model dqn_model.pth
 ```
 
-Put it in `demos/` and link it here before submission.
+`play.py` reconstructs the same CNN, loads `dqn_model.pth`, and selects actions greedily while rendering the game.
 
-## Files required for submission
+### Demo video
 
-- `train.py`, `play.py`
-- models under each member folder
-- training plots
-- 3 hyperparameter results markdown files
-- `README.md`
-- `Task_allocation_sheet.pdf`
-- presentation booking PDF
+A short recording of the best agent playing Pong:
+
+[Watch the gameplay demo](demos/screen-capture.webm)
+
+## How to reproduce (brief)
+
+```bash
+uv sync
+uv run python train.py --member <name> --experiment <n> [hyperparameters...]
+uv run python play.py --model dqn_model.pth
+```
