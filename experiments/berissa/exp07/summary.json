@@ -1,0 +1,10 @@
+{
+  "episodes": 288,
+  "total_steps": 250000,
+  "final_epsilon": 0.01,
+  "best_mean100_reward": -20.125,
+  "last_10_mean_reward": -21.0,
+  "plot": "plots/berissa/exp07_training.png",
+  "model": "experiments/berissa/exp07/dqn_model.pth",
+  "best_model": "experiments/berissa/exp07/dqn_model_best.pth"
+}

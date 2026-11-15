@@ -57,6 +57,15 @@ uv run python play.py
 uv run python play.py --model experiments/berissa/exp01/dqn_model_best.pth
 ```
 
+## Best trained agent (Berissa)
+
+- Best experiment: **exp01** (`lr=1e-4`, `gamma=0.99`, `batch=32`, 1M steps)
+- Best mean100 reward: **-16.83** (last-10 mean: **-15.1**)
+- Episodes / steps: **731 / 1,000,000**
+- Plot: `plots/berissa/exp01_training.png`
+- Demo weights: `dqn_model.pth` (copied from `experiments/berissa/exp01/dqn_model_best.pth`)
+- Full table: `Berissa_Hyperparameter_experiment_results.md`
+
 ## DQN pieces we implemented
 
 1. **CNN Q-network** (`dqn/network.py`)  
