@@ -29,7 +29,13 @@ def main():
             f"Model not found: {model_path}. Train first with train.py"
         )
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        # Apple Silicon GPU
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
     render_mode = None if args.no_render else "human"
     env = make_env(args.env_id, render_mode=render_mode)
     num_actions = int(env.action_space.n)
