@@ -1,0 +1,10 @@
+{
+  "episodes": 277,
+  "total_steps": 250000,
+  "final_epsilon": 0.5499999999928111,
+  "best_mean100_reward": -20.36,
+  "last_10_mean_reward": -20.6,
+  "plot": "plots\\hugues\\exp08_training.png",
+  "model": "experiments\\hugues\\exp08\\dqn_model.pth",
+  "best_model": "experiments\\hugues\\exp08\\dqn_model_best.pth"
+}
